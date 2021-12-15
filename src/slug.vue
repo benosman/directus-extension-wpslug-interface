@@ -101,12 +101,24 @@ export default defineComponent({
 		const values = inject('values', ref<Record<string, any>>({}));
 		const isEditing = ref<Boolean>(props.autofocus);
 		const isTouched = ref<Boolean>(false);
-
+		const initialized = ref<Boolean>(false);
+   
 		const prefix = computed(() => render(props.prefix || '', values.value));
 		const suffix = computed(() => render(props.suffix || '', values.value));
 		const presentedLink = computed(() => `${prefix.value}${props.value || props.placeholder || ''}${suffix.value}`);
-		const haveChange = computed(() => props.value && transform(render(props.template, values.value)) !== props.value);
-
+		const haveChange = computed(() => { 
+			if (props.value) {
+				const result = transform(render(props.template, values.value)) !== props.value;
+				if (!initialized.value) {
+					initialized.value = true;
+					if (result) {
+						isTouched.value = true;
+					}
+				}
+				return result;
+			}
+		});
+   
 		watch(values, (values: Record<string, any>) => {
 			// Reject manual touching.
 			if (isEditing.value || isTouched.value) return;
@@ -155,6 +167,7 @@ export default defineComponent({
 		}
 
 		function setByCurrentState() {
+			isTouched.value = false;
 			emitter(values.value);
 		}
 
